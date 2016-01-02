@@ -1,0 +1,14 @@
+
+<Application>
+    <rpcBindings>
+
+        <!-- Mapping from ID to classname; These do not have to match but helpful -->
+        <ServerObject ID="GreetingService" lookupStyle="new" 
+                        className="demo.server.GreetingService" >
+            <visibleMethods>
+                <method name="greetServer"/>                                                             
+            </visibleMethods>
+        </ServerObject>
+
+    </rpcBindings>
+</Application>

@@ -1,0 +1,18 @@
+
+<isomorphicXML>
+
+    <HLayout ID='ButtonLayout' layoutMargin='5' membersMargin='15'>
+        <members>
+
+            <Button ID="HelloWorld.button"> 
+                <title>Hello?</title>
+            </Button> 
+
+            <Button ID="HelloWorld.noname.button"> 
+                <title>No Name</title>
+            </Button> 
+
+        </members>
+    </HLayout>
+
+</isomorphicXML>
