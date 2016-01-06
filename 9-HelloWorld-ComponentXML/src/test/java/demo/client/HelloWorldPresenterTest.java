@@ -58,10 +58,13 @@ public class HelloWorldPresenterTest  {
 	@Mock
 	HelloWorldPresenter.View view;
 
-	@Mock
-	HasClickHandlers hasClickHandlers; 
+    @Mock
+    HasClickHandlers hasHelloClickHandlers; 
+    @Mock
+    HasClickHandlers hasNoNameClickHandlers; 
  
-    ClickHandler clickHandler;
+    ClickHandler helloClickHandler;
+    ClickHandler nonameClickHandler;
 
     final ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
 
@@ -71,20 +74,35 @@ public class HelloWorldPresenterTest  {
 
         // The view communicates via the a 'ClickHandler' interface 
 
-        when(view.getClickable()).thenReturn(hasClickHandlers);
+        when(view.getHelloClickable()).thenReturn(hasHelloClickHandlers);
 
         // When the mock 'hasClickHandlers' is registered get the Presenters
         //  real 'ClickHandler' from the invocation arguments
 
-        when(hasClickHandlers.addClickHandler(any(ClickHandler.class)))
+        when(hasHelloClickHandlers.addClickHandler(any(ClickHandler.class)))
             .thenAnswer(
                 new Answer<Object>() {
                     public Object answer(InvocationOnMock aInvocation) throws Throwable {
-                        clickHandler = (ClickHandler) aInvocation.getArguments()[0];
+                        helloClickHandler = (ClickHandler) aInvocation.getArguments()[0];
                         return null;
                     }
                 }
            );
+
+
+        when(view.getNoNameClickable()).thenReturn(hasNoNameClickHandlers);
+
+        when(hasNoNameClickHandlers.addClickHandler(any(ClickHandler.class)))
+            .thenAnswer(
+                new Answer<Object>() {
+                    public Object answer(InvocationOnMock aInvocation) throws Throwable {
+                        nonameClickHandler = (ClickHandler) aInvocation.getArguments()[0];
+                        return null;
+                    }
+                }
+           );
+
+
     }
 
     
@@ -96,7 +114,7 @@ public class HelloWorldPresenterTest  {
         modelWillReturnSuccess();
 
         // When
-        clickHandler.onClick(new ClickEvent(null){});
+        helloClickHandler.onClick(new ClickEvent(null){});
 
         // Expect
         verify(view, times(1)).displayResponse(captor.capture());
@@ -114,7 +132,7 @@ public class HelloWorldPresenterTest  {
         modelWillReturnFailure();
 
         // When
-        clickHandler.onClick(new ClickEvent(null){});
+        helloClickHandler.onClick(new ClickEvent(null){});
 
         // Expect
         verify(view, never()).displayResponse(anyString());
