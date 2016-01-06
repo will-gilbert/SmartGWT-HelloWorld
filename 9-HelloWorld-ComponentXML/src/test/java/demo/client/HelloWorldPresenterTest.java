@@ -34,6 +34,7 @@ import org.junit.runner.RunWith;
 
 
 // Mokito methods
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.never;
@@ -58,13 +59,8 @@ public class HelloWorldPresenterTest  {
 	@Mock
 	HelloWorldPresenter.View view;
 
-    @Mock
-    HasClickHandlers hasHelloClickHandlers; 
-    @Mock
-    HasClickHandlers hasNoNameClickHandlers; 
- 
     ClickHandler helloClickHandler;
-    ClickHandler nonameClickHandler;
+    ClickHandler noNameClickHandler;
 
     final ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
 
@@ -72,13 +68,11 @@ public class HelloWorldPresenterTest  {
     public void setup() {
         MockitoAnnotations.initMocks(this);
 
-        // The view communicates via the a 'ClickHandler' interface 
+       // Access the anonymous inner class ClickHanders of the SUT via these 
+        //   HasClickHandlers; Use two levels of mocks: View & HasClickHandlers
 
+        HasClickHandlers hasHelloClickHandlers = mock(HasClickHandlers.class);
         when(view.getHelloClickable()).thenReturn(hasHelloClickHandlers);
-
-        // When the mock 'hasClickHandlers' is registered get the Presenters
-        //  real 'ClickHandler' from the invocation arguments
-
         when(hasHelloClickHandlers.addClickHandler(any(ClickHandler.class)))
             .thenAnswer(
                 new Answer<Object>() {
@@ -89,19 +83,17 @@ public class HelloWorldPresenterTest  {
                 }
            );
 
-
+        HasClickHandlers hasNoNameClickHandlers = mock(HasClickHandlers.class);
         when(view.getNoNameClickable()).thenReturn(hasNoNameClickHandlers);
-
         when(hasNoNameClickHandlers.addClickHandler(any(ClickHandler.class)))
             .thenAnswer(
                 new Answer<Object>() {
                     public Object answer(InvocationOnMock aInvocation) throws Throwable {
-                        nonameClickHandler = (ClickHandler) aInvocation.getArguments()[0];
+                        noNameClickHandler = (ClickHandler) aInvocation.getArguments()[0];
                         return null;
                     }
                 }
            );
-
 
     }
 
@@ -132,7 +124,7 @@ public class HelloWorldPresenterTest  {
         modelWillReturnFailure();
 
         // When
-        helloClickHandler.onClick(new ClickEvent(null){});
+        noNameClickHandler.onClick(new ClickEvent(null){});
 
         // Expect
         verify(view, never()).displayResponse(anyString());
