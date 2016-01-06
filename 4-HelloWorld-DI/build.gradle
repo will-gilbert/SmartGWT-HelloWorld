@@ -103,7 +103,7 @@ dependencies {
 
     // Dependency Versions 
     def gwtSDK    = '2.7.0'
-    def smartgwt  = '5.0'
+    def smartgwt  = '5.1-LPGL'
     def gin       = '1.5.0'
     def guice     = '4.0'
     def junit     = '4.1'
