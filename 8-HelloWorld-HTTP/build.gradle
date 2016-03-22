@@ -10,7 +10,7 @@ gradle compileJava
 gradle test
   Runs Mockito test on the Presenter with involving a broswer or browser simulator
 
-gradle testSelenium
+gradle seleniumTests
   Runs Selenium tests by launching Jetty in the background; Choose the test browser
   via a System Property; Valid browsers include [safari, chrome, firefox]
 
