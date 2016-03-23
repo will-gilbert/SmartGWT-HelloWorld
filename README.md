@@ -1,3 +1,8 @@
+
+##GitHub SmartGWT-HelloWorld
+
+*https://github.com/will-gilbert/SmartGWT-HelloWorld*
+
 Here are some very small demonstration projects which show the various level of implementing dependency injection, loose coupling and event bus in GWT using a 'HelloWorld' like application which get its response from a server. No need to actually build and run walking through the source is simple enough to follow.
 
 There is also an example of testing anonymous inner classes with Mockito.
