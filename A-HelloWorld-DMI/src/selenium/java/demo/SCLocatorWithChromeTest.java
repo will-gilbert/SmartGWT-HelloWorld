@@ -37,6 +37,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
+@Ignore
 public class SCLocatorWithChromeTest {
 
     // Used by Safari when loading a page
