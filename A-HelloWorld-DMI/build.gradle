@@ -1,4 +1,4 @@
-task usage << { print """
+task usage doLast { print """
 ==================================================================================
 ${applicationName}, v${project.version}
 
@@ -9,7 +9,6 @@ gradle compileJava
   Requires 'lib/isomorphic_core_rpc.jar' from Pro or higher release
   Requires 'lib/isc-jakarta-oro-2.0.6.jar' from Pro or higher release
 
-
 gradle test
   Runs Mockito test on the Presenter with involving a broswer or browser simulator
 
@@ -18,11 +17,9 @@ gradle seleniumTests
   via a System Property; Valid browsers include [safari, chrome, firefox]
   Requires 'lib-WebDriverSupport/isomorphic_webdriver.jar' from Pro or higher release
 
-
 gradle clean jettyRun
   Cross compiles the client side Java into JavaScript; launches Jetty.  Use any browser to
   connect to the localhost on the port defined by 'jettyRun.httpPort'
-
 
 gradle clean
   Delete working files in 'project.buildDir'; invokes 'cleanGWT' to remove the directory
@@ -34,7 +31,6 @@ gradle clean
 
 import org.apache.tools.ant.filters.ReplaceTokens
 import static java.awt.Desktop.desktop
-
 
 apply plugin: 'groovy'
 apply plugin: 'java'
@@ -68,13 +64,13 @@ ext.localityProperties = [
         'application.name'    : applicationName,
         'welcome-file'        : gwtStartPage,
         'gwtModule'           : gwtModule,
-        'user.agent'          : findProperty('user.agent', 'safari'),
+        'user.agent'          : findProperty('user.agent') ?: 'safari'
     ]
 
 
 // Java Compiler Configuration -------------------------------------------------
 
-sourceCompatibility = 1.7
+sourceCompatibility = 1.8
 targetCompatibility = sourceCompatibility
 compileJava { 
     // options.compilerArgs << '-Xlint:-unchecked'
@@ -232,16 +228,6 @@ processResources {
     filter(ReplaceTokens, tokens: localityProperties)
 }
 
-
-//============================================================================================
-// U T I L I T Y   M E T H O D S ============================================================= 
-//============================================================================================
-
-def String findProperty(String propertyName, defaultValue='') {
-    def property = rootProject.hasProperty(propertyName) ? rootProject.getProperty(propertyName) : defaultValue
-    return property?.trim()
-}
-
 //============================================================================================
 // G W T   C O M P I L E   A N D   B U I L D    T A S K S ====================================
 //============================================================================================
@@ -355,7 +341,7 @@ jettyRun.doFirst {
     print   '| Open a browser and enter the URL-> '
     println "  http://localhost:${jettyRun.httpPort}/${project.name}/${gwtStartPage}"
     println '|'
-    println '| Mac OS X: Command-"Double Click" on the url'
+    println '| macOS: Command-"Double Click" on the url'
     println '| Ctrl-C or Command-Period to quit'
     println '|'
 }

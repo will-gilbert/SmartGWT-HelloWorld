@@ -1,11 +1,10 @@
-task usage << { print """
+task usage doLast { print """
 ==================================================================================
 ${applicationName}, v${project.version}
 
 gradle compileJava
   Compile Java source code displaying warnings and error to the terminal console. Does not
   cross compile Java to JavaScript
-
 
 gradle test
   Runs Mockito test on the Presenter with involving a broswer or browser simulator
@@ -14,18 +13,15 @@ gradle seleniumTests
   Runs Selenium tests by launching Jetty in the background; Choose the test browser
   via a System Property; Valid browsers include [safari, chrome, firefox]
 
-
 gradle clean jettyRun
   Cross compiles the client side Java into JavaScript; launches Jetty.  Use any browser to
   connect to the localhost on the port defined by 'jettyRun.httpPort'
-
 
 gradle clean
   Delete working files in 'project.buildDir'; invokes 'cleanGWT' to remove the directory
   used by the GWT DevMode environment
 
 ==================================================================================
-
 """}
 
 import org.apache.tools.ant.filters.ReplaceTokens
@@ -51,9 +47,9 @@ version = '1.0'
 // GWT Compiler Configuration ---------------------------------------------------
 
 ext.gwtModuleXML = 'demo.HelloWorld'   // Path to module descriptor
-ext.gwtModule = 'helloworld'           // 'rename-to' within module descriptor
+ext.gwtModule    = 'helloworld'        // 'rename-to' within module descriptor
 ext.gwtStartPage = 'HelloWorld.html'   // HTML startup page
-ext.gwtBuildDir = 'build-gwt'          // GWT build directory
+ext.gwtBuildDir  = 'build-gwt'         // GWT build directory
 
 
 // Properties -------------------------------------------------------------------
@@ -63,13 +59,13 @@ ext.localityProperties = [
         'application.name'    : applicationName,
         'welcome-file'        : gwtStartPage,
         'gwtModule'           : gwtModule,
-        'user.agent'          : findProperty('user.agent', 'safari'),
+        'user.agent'          : findProperty('user.agent') ?: 'safari'
     ]
 
 
 // Java Compiler Configuration -------------------------------------------------
 
-sourceCompatibility = 1.7
+sourceCompatibility = 1.8
 targetCompatibility = sourceCompatibility
 compileJava { 
     // options.compilerArgs << '-Xlint:-unchecked'
@@ -203,16 +199,6 @@ task cleanGWT(type:Delete) {
 
 processResources {
     filter(ReplaceTokens, tokens: localityProperties)
-}
-
-
-//============================================================================================
-// U T I L I T Y   M E T H O D S ============================================================= 
-//============================================================================================
-
-def String findProperty(String propertyName, defaultValue='') {
-    def property = rootProject.hasProperty(propertyName) ? rootProject.getProperty(propertyName) : defaultValue
-    return property?.trim()
 }
 
 //============================================================================================

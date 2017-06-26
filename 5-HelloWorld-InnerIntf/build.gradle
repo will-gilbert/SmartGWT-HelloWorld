@@ -1,11 +1,10 @@
-task usage << { print """
+task usage doLast { print """
 ==================================================================================
 ${applicationName}, v${project.version}
 
 gradle compileJava
   Compile Java source code displaying warnings and error to the terminal console. Does not
   cross compile Java to JavaScript
-
 
 gradle test
   Runs Mockito test on the Presenter with involving a broswer or browser simulator
@@ -14,11 +13,9 @@ gradle testSelenium
   Runs Selenium tests by launching Jetty in the background; Choose the test browser
   via a System Property; Valid browsers include [safari, chrome, firefox]
 
-
 gradle clean jettyRun
   Cross compiles the client side Java into JavaScript; launches Jetty.  Use any browser to
   connect to the localhost on the port defined by 'jettyRun.httpPort'
-
 
 gradle clean
   Delete working files in 'project.buildDir'; invokes 'cleanGWT' to remove the directory
@@ -51,9 +48,9 @@ version = '1.0'
 // GWT Compiler Configuration ---------------------------------------------------
 
 ext.gwtModuleXML = 'demo.HelloWorld'   // Path to module descriptor
-ext.gwtModule = 'helloworld'  // 'rename-to' within module descriptor
+ext.gwtModule    = 'helloworld'        // 'rename-to' within module descriptor
 ext.gwtStartPage = 'HelloWorld.html'   // HTML startup page
-ext.gwtBuildDir = 'build-gwt'          // GWT build directory
+ext.gwtBuildDir  = 'build-gwt'         // GWT build directory
 
 
 // Properties -------------------------------------------------------------------
@@ -62,14 +59,14 @@ ext.localityProperties = [
         'application.version' : project.version,
         'application.name'    : applicationName,
         'welcome-file'        : gwtStartPage,
-        'gwtModule'  : gwtModule,
-        'user.agent'          : findProperty('user.agent', 'safari'),
+        'gwtModule'           : gwtModule,
+        'user.agent'          : findProperty('user.agent') ?: 'safari'
     ]
 
 
 // Java Compiler Configuration -------------------------------------------------
 
-sourceCompatibility = 1.7
+sourceCompatibility = 1.8
 targetCompatibility = sourceCompatibility
 compileJava { 
     // options.compilerArgs << '-Xlint:-unchecked'
@@ -108,7 +105,7 @@ dependencies {
     // Dependency Versions 
 
     def gwtSDK       = '2.7.0'
-    def smartgwt     = '5.1-LPGL'
+    def smartgwt     = '6.1-LPGL'
     def gin          = '1.5.0'
     def guice        = '4.0'
     def junit        = '4.12'
@@ -149,8 +146,7 @@ dependencies {
     gwtCompile([
         "com.google.gwt:gwt-dev:$gwtSDK",
         "com.google.gwt:gwt-servlet:$gwtSDK",
-        "com.google.gwt:gwt-codeserver:$gwtSDK",
-        'javax.validation:validation-api:1.1.0.Final'
+        "com.google.gwt:gwt-codeserver:$gwtSDK"
     ])
 
 }
@@ -189,15 +185,6 @@ processResources {
     filter(ReplaceTokens, tokens: localityProperties)
 }
 
-
-//============================================================================================
-// U T I L I T Y   M E T H O D S ============================================================= 
-//============================================================================================
-
-def String findProperty(String propertyName, defaultValue='') {
-    def property = rootProject.hasProperty(propertyName) ? rootProject.getProperty(propertyName) : defaultValue
-    return property?.trim()
-}
 
 //============================================================================================
 // G W T   C O M P I L E   A N D   B U I L D    T A S K S ====================================
