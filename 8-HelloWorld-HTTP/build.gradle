@@ -48,9 +48,9 @@ version = '1.0'
 // GWT Compiler Configuration ---------------------------------------------------
 
 ext.gwtModuleXML = 'demo.HelloWorld'   // Path to module descriptor
-ext.getModule = 'helloworld'           // 'rename-to' within module descriptor
+ext.gwtModule = 'helloworld'           // 'rename-to' within module descriptor
 ext.gwtStartPage = 'HelloWorld.html'   // HTML startup page
-ext.gwtBuildDir = 'build-gwt'          // GWT build directory
+ext.gwtBuildDir = "${buildDir}-gwt"    // GWT build directory
 
 
 // Properties -------------------------------------------------------------------
@@ -59,7 +59,7 @@ ext.localityProperties = [
         'application.version' : project.version,
         'application.name'    : applicationName,
         'welcome-file'        : gwtStartPage,
-        'getModule'  : getModule,
+        'gwtModule'           : gwtModule,
         'user.agent'          : findProperty('user.agent') ?: 'safari'
     ]
 
@@ -104,7 +104,7 @@ dependencies {
 
     // Dependency Versions 
 
-    def gwtSDK       = '2.7.0'
+    def gwtSDK       = '2.8.1'
     def smartgwt     = '6.0-LPGL' // 6.1 did. not show icons or debugger correctly
     def gin          = '1.5.0'
     def guice        = '4.0'
@@ -122,6 +122,7 @@ dependencies {
 
         // GWT --------------------------------------------------------
         "com.google.gwt:gwt-user:$gwtSDK",
+        "com.google.gwt:gwt-dev:$gwtSDK",
 
         // Google Dependency Injection
         "com.google.gwt.inject:gin:$gin",
@@ -144,9 +145,8 @@ dependencies {
     ]) 
 
     gwtCompile([
-        "com.google.gwt:gwt-dev:$gwtSDK",
         "com.google.gwt:gwt-servlet:$gwtSDK",
-        'javax.validation:validation-api:1.1.0.Final'
+        "com.google.gwt:gwt-codeserver:$gwtSDK"
     ])
 
 }
@@ -198,12 +198,11 @@ task compileGWT(dependsOn: ['compileJava', 'copyWebAppResources'], type:JavaExec
 
     outputs.upToDateSpec = new org.gradle.api.specs.AndSpec()
     inputs.dir sourceSets.main.java.srcDirs
-    outputs.dir new File("${gwtBuildDir}/${getModule}")
+    outputs.dir new File("${gwtBuildDir}/${gwtModule}")
 
     // Define the properties for the 'JavaExec' task
     main ='com.google.gwt.dev.Compiler'
-    
-    jvmArgs = ['-Xmx512M']                 // 512M Memory, increase for larger Apps
+    jvmArgs = ['-Xmx1024M']                 // Memory, increase for larger Apps
 
     classpath = files ([
         sourceSets.main.java.srcDirs,      // Contains Java sources to be compiled into JavaScript
@@ -274,8 +273,8 @@ war {
     // Exclude resources which we don't want in the WAR
     excludes = [ 
             'WEB-INF/deploy',
-            getModule + '/sc/skins/Enterprise',
-            getModule + '/sc/skins/EnterpriseBlue'
+            gwtModule + '/sc/skins/Enterprise',
+            gwtModule + '/sc/skins/EnterpriseBlue'
         ]
 }
 

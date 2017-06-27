@@ -48,7 +48,7 @@ version = '1.0'
 ext.gwtModuleXML = 'demo.HelloWorld'   // Path to module descriptor
 ext.gwtModule    = 'helloworld'        // 'rename-to' within module descriptor
 ext.gwtStartPage = 'HelloWorld.html'   // HTML startup page
-ext.gwtBuildDir  = 'build-gwt'         // GWT build directory
+ext.gwtBuildDir  = "${buildDir}-gwt"   // GWT build directory
 
 
 // Properties -------------------------------------------------------------------
@@ -58,7 +58,7 @@ ext.localityProperties = [
         'application.name'    : applicationName,
         'welcome-file'        : gwtStartPage,
         'gwtModule'           : gwtModule,
-        'user.agent'          : findProperty('user.agent', 'safari'),
+        'user.agent'          : findProperty('user.agent') ?: 'safari'
     ]
 
 
@@ -106,12 +106,12 @@ dependencies {
 
     // Download the LGPL versions from http://www.smartclient.com/product/download.jsp
     compile files(
-        "../lib/SmartGWT-$smartgwt/smartgwt.jar", 
-        "../lib/SmartGWT-$smartgwt/smartgwt-skins.jar"
+        "../lib/SmartGWT-${smartgwt}/smartgwt.jar", 
+        "../lib/SmartGWT-${smartgwt}/smartgwt-skins.jar"
     )
 
     compile ([
-        "com.google.gwt:gwt-user:$gwtSDK"
+        "com.google.gwt:gwt-user:${gwtSDK}"
     ])
     
     runtime ([ ])        // TDB
@@ -121,10 +121,9 @@ dependencies {
     testRuntime([ ])     // TDB
 
     gwtCompile([
-        "com.google.gwt:gwt-dev:$gwtSDK",
-        "com.google.gwt:gwt-servlet:$gwtSDK",
-        "com.google.gwt:gwt-codeserver:$gwtSDK"
-        // 'javax.validation:validation-api:1.1.0.Final'
+        "com.google.gwt:gwt-dev:${gwtSDK}",
+        "com.google.gwt:gwt-servlet:${gwtSDK}",
+        "com.google.gwt:gwt-codeserver:${gwtSDK}"
     ])
 
 }
@@ -142,25 +141,12 @@ task cleanGWT(type:Delete) {
     delete gwtBuildDir
 }
 
-
 // Augment the 'processResources' task from the 'java' plugin.  Use filtering to replace
 //   '@...@' tags with properties in order to customize the target environment
 
 processResources {
     filter(ReplaceTokens, tokens: localityProperties)
 }
-
-
-
-//============================================================================================
-// U T I L I T Y   M E T H O D S ============================================================= 
-//============================================================================================
-
-def String findProperty(String propertyName, defaultValue='') {
-    def property = rootProject.hasProperty(propertyName) ? rootProject.getProperty(propertyName) : defaultValue
-    return property?.trim()
-}
-
 
 
 //============================================================================================
@@ -180,8 +166,7 @@ task compileGWT(dependsOn: ['compileJava', 'copyWebAppResources'], type:JavaExec
 
     // Define the properties for the 'JavaExec' task
     main ='com.google.gwt.dev.Compiler'
-    
-    jvmArgs = ['-Xmx512M']                 // 512M Memory, increase for larger Apps
+    jvmArgs = ['-Xmx1024M']                 // 512M Memory, increase for larger Apps
 
     classpath = files ([
         sourceSets.main.java.srcDirs,      // Contains Java sources to be compiled into JavaScript

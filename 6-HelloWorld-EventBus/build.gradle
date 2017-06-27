@@ -46,7 +46,7 @@ version = '1.0'
 ext.gwtModuleXML = 'demo.HelloWorld'    // Path to module descriptor
 ext.gwtModule    = 'helloworld'         // 'rename-to' within module descriptor
 ext.gwtStartPage = 'HelloWorld.html'    // HTML startup page
-ext.gwtBuildDir  = 'build-gwt'          // GWT build directory
+ext.gwtBuildDir  = "${buildDir}-gwt"    // GWT build directory
 
 
 // Properties -------------------------------------------------------------------
@@ -97,7 +97,7 @@ configurations { [gwtCompile] }
 dependencies {
 
 // Dependency Versions 
-    def gwtSDK    = '2.7.0'        // 2.8.0 GC overhead exceeded
+    def gwtSDK    = '2.8.1'
     def smartgwt  = '6.1-LPGL'
     def gin       = '1.5.0'
     def guice     = '4.0'
@@ -114,12 +114,11 @@ dependencies {
 
         // GWT --------------------------------------------------------
         "com.google.gwt:gwt-user:$gwtSDK",
+        "com.google.gwt:gwt-dev:$gwtSDK",
 
         // Google Dependency Injection
         "com.google.gwt.inject:gin:$gin",
         "com.google.inject:guice:$guice",
-
-
     ])
     
     runtime ([ ])        // TDB
@@ -132,7 +131,6 @@ dependencies {
     testRuntime([ ])     // TDB
 
     gwtCompile([
-        "com.google.gwt:gwt-dev:$gwtSDK",
         "com.google.gwt:gwt-servlet:$gwtSDK",
         "com.google.gwt:gwt-codeserver:$gwtSDK"
     ])
@@ -176,7 +174,7 @@ task compileGWT(dependsOn: ['compileJava', 'copyWebAppResources'], type:JavaExec
     // Define the properties for the 'JavaExec' task
     main ='com.google.gwt.dev.Compiler'
     
-    jvmArgs = ['-Xmx512M']                 // 512M Memory, increase for larger Apps
+    jvmArgs = ['-Xmx1024M']                 // Memory, increase for larger Apps
 
     classpath = files ([
         sourceSets.main.java.srcDirs,      // Contains Java sources to be compiled into JavaScript
@@ -215,8 +213,7 @@ task devMode(dependsOn: ['compileJava', 'copyWebAppResources', 'copyLibraries'],
 
     main ='com.google.gwt.dev.DevMode'
     
-    maxHeapSize = '2000M' 
-    jvmArgs += '-XX:MaxPermSize=2048m'          // PermGen space
+    jvmArgs = ['-Xmx1024M']                 // Memory, increase for larger Apps
     jvmArgs += '-Dgwt.nowarn.webapp.classpath'  // Supress DevMode classpath warnings
 
     classpath = files([

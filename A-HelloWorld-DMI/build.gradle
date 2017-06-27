@@ -54,7 +54,7 @@ version = '1.0'
 ext.gwtModuleXML = 'demo.HelloWorld'   // Path to module descriptor
 ext.gwtModule = 'helloworld'           // 'rename-to' within module descriptor
 ext.gwtStartPage = 'HelloWorld.html'   // HTML startup page
-ext.gwtBuildDir = 'build-gwt'          // GWT build directory
+ext.gwtBuildDir = "${buildDir}-gwt"    // GWT build directory
 
 
 // Properties -------------------------------------------------------------------
@@ -108,7 +108,7 @@ dependencies {
 
     // Dependency Versions 
 
-    def gwtSDK       = '2.7.0'
+    def gwtSDK       = '2.8.1'
     def smartgwt     = '5.1-Power'
     def gin          = '1.5.0'
     def guice        = '4.0'
@@ -129,6 +129,7 @@ dependencies {
 
         // GWT --------------------------------------------------------
         "com.google.gwt:gwt-user:$gwtSDK",
+        "com.google.gwt:gwt-dev:$gwtSDK",
 
         // Google Dependency Injection
         "com.google.gwt.inject:gin:$gin",
@@ -182,9 +183,7 @@ dependencies {
     ) 
 
     gwtCompile([
-        "com.google.gwt:gwt-dev:$gwtSDK",
-        "com.google.gwt:gwt-servlet:$gwtSDK",
-        'javax.validation:validation-api:1.1.0.Final'
+        "com.google.gwt:gwt-servlet:$gwtSDK"
     ])
 
 }
@@ -245,8 +244,7 @@ task compileGWT(dependsOn: ['compileJava', 'copyWebAppResources'], type:JavaExec
 
     // Define the properties for the 'JavaExec' task
     main ='com.google.gwt.dev.Compiler'
-    
-    jvmArgs = ['-Xmx512M']                 // 512M Memory, increase for larger Apps
+    jvmArgs = ['-Xmx1024M']                 // Memory, increase for larger Apps
 
     classpath = files ([
         sourceSets.main.java.srcDirs,      // Contains Java sources to be compiled into JavaScript

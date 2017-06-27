@@ -43,9 +43,9 @@ version = '1.0'
 // GWT Compiler Configuration ---------------------------------------------------
 
 ext.gwtModuleXML = 'demo.HelloWorld'   // Path to module descriptor
-ext.gwtModule = 'helloworld'           // 'rename-to' within module descriptor
+ext.gwtModule    = 'helloworld'        // 'rename-to' within module descriptor
 ext.gwtStartPage = 'HelloWorld.html'   // HTML startup page
-ext.gwtBuildDir = 'build-gwt'          // GWT build directory
+ext.gwtBuildDir  = "${buildDir}-gwt"   // GWT build directory
 
 
 // Properties -------------------------------------------------------------------
@@ -85,12 +85,8 @@ ext.excludedClasses = [
 
 
 repositories {
-    mavenLocal()     // User's local Maven repository
-    
-    maven { url "http://aws.informagen.org:8081/nexus/content/repositories/thirdparty/" }
-    maven { url "http://aws.informagen.org:8081/nexus/content/repositories/central/"    }
-    maven { url "http://aws.informagen.org:8081/nexus/content/repositories/snapshots/"  }
-
+    mavenLocal()
+    mavenCentral()
     jcenter()
 }
 
@@ -164,8 +160,7 @@ task compileGWT(dependsOn: ['compileJava', 'copyWebAppResources'], type:JavaExec
 
     // Define the properties for the 'JavaExec' task
     main ='com.google.gwt.dev.Compiler'
-    
-    jvmArgs = ['-Xmx512M']                 // 512M Memory, increase for larger Apps
+    jvmArgs = ['-Xmx1024M']                 // CG Memory, increase for larger Apps
 
     classpath = files ([
         sourceSets.main.java.srcDirs,      // Contains Java sources to be compiled into JavaScript
@@ -295,23 +290,11 @@ jettyRun.doFirst {
     print   '| Open a browser and enter the URL-> '
     println "  http://localhost:${jettyRun.httpPort}/${project.name}/${gwtStartPage}"
     println '|'
-    println '| Mac OS X: Command-"Double Click" on the url'
+    println '| macOS: Command-"Double Click" on the url'
     println '| Ctrl-C or Command-Period to quit'
     println '|'
 }
 
-
-
-//============================================================================================
-// U N I T   T E S T I N G =====================================================================
-//============================================================================================
-
-// Launch the browser if any test fails and display the report
-
-gradle.taskGraph.afterTask { task, taskState ->
-    if (task.name == 'test' && taskState.failure)
-        desktop.browse(new File(testReportDir, 'index.html').toURI())
-}
 
 
 
