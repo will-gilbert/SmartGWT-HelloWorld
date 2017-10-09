@@ -20,13 +20,23 @@ import com.smartgwt.client.util.SC;
 
 public class HelloWorldView implements HelloWorldPresenter.View  {
 
-	HLayout container = (HLayout)HLayout.getById("ButtonLayout");
+	private static final String CONTAINER_ID = "ButtonLayout";
+	private static final String HELLO_WORLD_BUTTON_ID = "HelloWorld.button";
+	private static final String NO_NAME_BUTTON_ID = "HelloWorld.noname.button";
+
+
+	HLayout container = (HLayout)HLayout.getById(CONTAINER_ID);
 
 	// Create the buttons via ComponentXML
-	private final Button helloButton = (Button)Canvas.getById("HelloWorld.button");
-	private final Button noNameButton = (Button)Canvas.getById("HelloWorld.noname.button");
+	private final Button helloButton = (Button)Canvas.getById(HELLO_WORLD_BUTTON_ID);
+	private final Button noNameButton = (Button)Canvas.getById(NO_NAME_BUTTON_ID);
 
 	public HelloWorldView() {
+
+		helloButton.setID(HELLO_WORLD_BUTTON_ID);
+		helloButton.setBaseStyle(helloButton.getBaseStyle() + " " + helloButton.getID());
+		noNameButton.setID(NO_NAME_BUTTON_ID);
+		noNameButton.setBaseStyle(noNameButton.getBaseStyle() + " " + noNameButton.getID());
 		
 		// ComponentXML does not support IconButton but 
 		//   we can add it programtically 
