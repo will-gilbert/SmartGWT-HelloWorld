@@ -6,19 +6,19 @@ gradle compileJava
   Compile Java source code displaying warnings and error to the terminal console. Does not
   cross compile Java to JavaScript
 
-gradle test
+gradle clearReports unitTests report
   Runs Mockito test on the Presenter with involving a broswer or browser simulator
 
-gradle seleniumTests
-  Runs Selenium tests by launching Jetty in the background; Choose the test browser
+gradle clearReports war bddTests aggregate report
+  Runs BDD tests by launching Jetty in the background; Choose the test browser
   via a System Property; Valid browsers include [safari, chrome, firefox]
 
-gradle clean war jettyRun
-  Cross compiles the client side Java into JavaScript; launches Jetty.  Use any browser to
-  connect to the localhost on the port defined by 'jettyRun.httpPort'
+gradle war appRun
+  Cross compiles the client side Java into JavaScript; launches '${gretty.servletContainer}'.  
+  Use any browser to connect to the localhost on the port defined by '${gretty.httpPort}'.
 
 gradle clean
-  Delete working files in 'project.buildDir'; invokes 'cleanGWT' to remove the directory
+  Delete working files in '${project.buildDir}'; invokes 'cleanGWT' to remove the directory
   used by the GWT DevMode environment
 ${'='*80}
 """}
@@ -27,10 +27,16 @@ import org.apache.tools.ant.filters.ReplaceTokens
 import static java.awt.Desktop.desktop
 
 apply plugin: 'java'
-apply plugin: 'org.akhikhl.gretty'
+apply plugin: 'groovy'
 apply plugin: 'war'
+apply plugin: 'net.serenity-bdd.aggregator'
+apply plugin: 'org.akhikhl.gretty'
 
 buildscript {
+
+    def serenityPlugin = '1.5.10'  // Sep 2017
+    def grettyPlugin   = '2.0.0'
+
   repositories {
     mavenLocal()
     jcenter()
@@ -38,7 +44,8 @@ buildscript {
   }
 
   dependencies {
-    classpath "org.akhikhl.gretty:gretty:2.0.0"
+    classpath("net.serenity-bdd:serenity-gradle-plugin:$serenityPlugin")
+    classpath "org.akhikhl.gretty:gretty:$grettyPlugin"
   }
 }
 
@@ -60,8 +67,22 @@ ext.gwtModule    = 'helloworld'        // 'rename-to' within module descriptor
 ext.gwtStartPage = 'HelloWorld.html'   // HTML startup page
 ext.gwtBuildDir  = "${buildDir}-gwt"   // GWT build directory
 
+// Selenide, Selenium, Page Object Configuration -------------------------------
 
-// Properties -------------------------------------------------------------------
+// Selenide
+ext.selenideBrowser = findProperty('selenide.browser') ?: 'chrome'
+ext.selenideBrowserSize = findProperty('selenide.browser-size') ?: '1200x800'
+ext.selenideTimeout = findProperty('selenide.timeout') ?: '4000'
+
+// Selenide Wait and Sleep delays
+ext.pageobjectsWait = findProperty('pageobjects.wait') ?: '10000'
+ext.pageobjectsSleep = findProperty('pageobjects.sleep') ?: '1000'
+ext.pageobjectsLongerSleep = findProperty('pageobjects.longerSleep') ?: '2000'
+
+ext.tags = findProperty('tag') ?: (findProperty('tags') ?: 'Test')
+
+
+// GWT and Application Properties ----------------------------------------------
 
 ext.localityProperties = [
         'application.version' : project.version,
@@ -80,8 +101,6 @@ compileJava {
     // options.compilerArgs << '-Xlint:-unchecked'
     options.compilerArgs << '-Xlint:-deprecation'
 } 
-
-
 
 
 // WAR Configuration -----------------------------------------------------------
@@ -106,19 +125,30 @@ repositories {
 
 
 // Create a GWT Compiler & Selenium compile configuration
-configurations { [seleniumCompile] }
+
+// configurations { bdd }
 
 dependencies {
 
-    // Dependency Versions 
+    // Dependency Versions
 
+    // SmartGWT Application
     def gwtSDK       = '2.8.1'
     def smartgwt     = '5.1-Power'
     def gin          = '1.5.0'
     def guice        = '4.0'
-    def junit        = '4.12'
+
+    // Testing
+    def junit        = '4.12'           // Dec 2014
     def mockito      = '1.10.19'
     def selenium     = '2.48.2'
+
+    // Last checked MVNRepository.com: 10-Aug-2017
+    def groovy       = '2.4.12'         // Jun 2017
+    def cucumber     = '1.2.5'          // Sep 2016
+    def selenide     = '4.6'            // Aug 2017
+    def bdd          = '1.5.4'          // Jul 2017
+    def slf4j        = '1.7.25'         // Mar 2017
 
     // Download the Pro or Power versions; These are licsensed but 
     //      limited demos exist
@@ -136,10 +166,10 @@ dependencies {
 
         // Google Dependency Injection
         "com.google.gwt.inject:gin:$gin",
-        "com.google.inject:guice:$guice"
-
+        "com.google.inject:guice:$guice",
     ])
-    
+   
+
     runtime files (
         // From the Pro or Power 'lib' directory
         //    Contains 'ScreenLoaderServlet'
@@ -156,21 +186,21 @@ dependencies {
         'org.slf4j:slf4j-log4j12:1.7.7',
         'commons-jxpath:commons-jxpath:1.3',
         'commons-pool:commons-pool:1.4',
-        'org.apache.velocity:velocity:1.7'
+        'org.apache.velocity:velocity:1.7',
     ])
 
     testCompile([ 
         "junit:junit:$junit",
-        "org.mockito:mockito-core:$mockito"
+        "org.codehaus.groovy:groovy-all:$groovy",
+        "org.mockito:mockito-core:$mockito",
+        "info.cukes:cucumber-groovy:$cucumber",
+        "net.serenity-bdd:serenity-cucumber:$bdd",
+        "com.codeborne:selenide:$selenide",
+        "org.seleniumhq.selenium:selenium-java:$selenium",
+        'javax.validation:validation-api:1.1.0.Final:sources'
     ])
 
     testRuntime([ ])     // TDB
-
-    seleniumCompile ([ 
-        "junit:junit:$junit",
-        "org.seleniumhq.selenium:selenium-java:$selenium"
-    ]) 
-
 
 }
 
@@ -180,11 +210,18 @@ dependencies {
 //============================================================================================
 
 sourceSets {
+  
 
-    selenium {
-        java { srcDirs 'src/selenium/java' }
-    }
+ test {
+        groovy {
+            srcDirs = ['src/bdd/groovy','src/bdd/java','src/test/java']
+        }
 
+        java {
+            srcDirs = []
+        }
+    }  
+ 
 }
 
 
@@ -320,55 +357,119 @@ gretty {
 
     loggingLevel = 'INFO' // options:   'ALL', 'DEBUG', 'ERROR', 'INFO', 'OFF', 'TRACE', 'WARN'
 
+
+    integrationTestTask = 'bddTests'
 }
 
-
-/*
-// Background daemon used by Selenium testing
-task jettyDaemon(type: org.gradle.api.plugins.jetty.JettyRun, dependsOn: compileGWT) {
-    daemon = true
-    httpPort = 9090              // Avoid potential conflicts with existing 8080
-    stopPort = 9091
-    stopKey = "stop jettyDaemon"
-}
-
-jettyStop {
-    stopPort = 9091
-    stopKey = "stop jettyDaemon"
-
-}
-*/
 
 //============================================================================================
-// S E L E N I U M   C O N F I G U R A T I O N  ============================================== 
+// T E S T   C O N F I G U R A T I O N  ====================================================== 
 //============================================================================================
-/*
-task seleniumTests(type: Test, dependsOn: jettyDaemon) {
 
-    // Always run tests
+task bddTests(type: Test) {
+     include '/glue/**/*Test.class'
+ }
+
+task unitTests(type: Test) {
+     include '/demo/**/*Test.class'
+}
+
+
+//============================================================================================
+//  R E P O R T I N G  =======================================================================
+//============================================================================================
+
+
+task reports {
+    doLast {
+        displayReport 'test'
+        displayReport 'cucumber'
+        displayReport 'serenity'
+    }  
+}
+
+// BDD 'clearReports' also clears other test reports
+clearReports.doLast {
+    delete testReportDir
+}
+
+private def displayReport(def reportName) {
+    try {
+        desktop.browse(new File("$buildDir.name/$reportsDir.name/tests/${reportName}", 'index.html').toURI())
+    } catch (IOException exception) { /* Ignore missing report */ }
+}
+
+//============================================================================================
+//  T E S T I N G ============================================================================
+//============================================================================================
+
+// Define common behavior for all tests i.e. Unit, BDD, Cucumber
+tasks.withType(Test) {
+
+    reports.html.destination = new File(testReportDir, 'cucumber')
+    reports.junitXml.destination = new File(testReportDir, 'cucumber-xml')
+
+    // If a test fails, do not quit but move onto the next test
+    ignoreFailures true
+
+    // Always run tests; This happens when the data or configuration has changed but not the test code
     outputs.upToDateWhen { false }
 
-    // Pass the test URL and the test browser [safari, chrome, firefox]
-    systemProperty "selenium.test.url", "http://localhost:${jettyRun.httpPort}/${project.name}/${gwtStartPage}"
-    systemProperty "selenium.test.browser", "safari"
+    systemProperty 'selenide.baseUrl', "http://localhost:${gretty.httpPort}/${applicationName}"
+    systemProperty 'selenide.browser', selenideBrowser
+    systemProperty 'selenide.browser-size', selenideBrowserSize
+    systemProperty 'selenide.timeout', selenideTimeout
 
-    testClassesDir = sourceSets.selenium.output.classesDir
-    classpath = sourceSets.selenium.runtimeClasspath
+    // Selenide Wait and Sleep delays
+    systemProperty 'pageobjects.wait', pageobjectsWait
+    systemProperty 'pageobjects.sleep', pageobjectsSleep
+    systemProperty 'pageobjects.longerSleep', pageobjectsLongerSleep
 
-    finalizedBy jettyStop
+    // External webdriver executatables; Defined in 'gradle.properties'
+    switch (selenideBrowser) {
+        case 'chrome':
+            systemProperty 'webdriver.chrome.driver', chromedriver; break
+        case 'firefox':
+            systemProperty 'webdriver.gecko.driver', firefoxdriver; break
+        case 'jbrowser':
+            systemProperty 'java.awt.headless', 'true'
+            systemProperty 'jbd.useragent', 'chrome'
+            systemProperty 'jbd.headless', 'true'
+            systemProperty 'jbd.javascript', 'true'
+            systemProperty 'jbd.quickrender', 'true'
+            systemProperty 'jbd.screenwidth', '1200'
+            systemProperty 'jbd.screenheight', '1300'
+            break
+    }
+
+
+
+
+    // Set options for log level LIFECYCLE
+    testLogging {
+        events 'standardError'
+        showExceptions true
+        exceptionFormat 'short'
+        showCauses false
+        showStackTraces false
+        showStandardStreams = false
+    }
+
+    // Display a green/red bar after the tests finish
+    afterSuite { desc, result ->
+        if (desc.parent == null) {
+            // Green background for complete success, red for any failures
+                print((result.resultType.toString() == 'SUCCESS' && result.testCount>0 ) ? '\033[1;37m\033[1;42m' : '\033[1;37m\033[1;41m')
+            print "Results: ${result.resultType} "
+            print "(${result.testCount} tests, "
+            print "${result.successfulTestCount} successes, "
+            print "${result.failedTestCount} failures, "
+            print "${result.skippedTestCount} skipped)"
+            println '\033[0m'
+        }
+    }
+
+
 }
-*/
-
-//============================================================================================
-// U N I T   T E S T I N G ===================================================================
-//============================================================================================
-
-// Launch the browser if any unit or Selenium tests fails and display the report
-
-gradle.taskGraph.afterTask { task, taskState ->
-    if ( (task.name == 'test' || task.name == 'seleniumTests') && taskState.failure)
-        desktop.browse(new File(testReportDir, 'index.html').toURI())
-}
-
 
 
