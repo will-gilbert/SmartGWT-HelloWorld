@@ -14,9 +14,4 @@ import org.junit.runner.RunWith;
 
 )
 
-public class LoginTest {
-
-	static {System.out.println("LoginTest");}
-
-
-}
+public class LoginTest {}

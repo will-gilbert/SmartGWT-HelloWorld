@@ -6,8 +6,8 @@ gradle compileJava
   Compile Java source code displaying warnings and error to the terminal console. Does not
   cross compile Java to JavaScript
 
-gradle clearReports unitTests report
-  Runs Mockito test on the Presenter with involving a broswer or browser simulator
+gradle clearReports test report
+  Runs Mockito unit tests on the Presenter without creating a broswer or browser simulator
 
 gradle clearReports war bddTests aggregate report
   Runs BDD tests by launching Jetty in the background; Choose the test browser
@@ -67,6 +67,7 @@ ext.gwtModule    = 'helloworld'        // 'rename-to' within module descriptor
 ext.gwtStartPage = 'HelloWorld.html'   // HTML startup page
 ext.gwtBuildDir  = "${buildDir}-gwt"   // GWT build directory
 
+
 // Selenide, Selenium, Page Object Configuration -------------------------------
 
 // Selenide
@@ -79,8 +80,7 @@ ext.pageobjectsWait = findProperty('pageobjects.wait') ?: '10000'
 ext.pageobjectsSleep = findProperty('pageobjects.sleep') ?: '1000'
 ext.pageobjectsLongerSleep = findProperty('pageobjects.longerSleep') ?: '2000'
 
-ext.tags = findProperty('tag') ?: (findProperty('tags') ?: 'Test')
-
+ext.showOutput = (findProperty('testing.showOutput') ?: 'false').toBoolean()
 
 // GWT and Application Properties ----------------------------------------------
 
@@ -105,7 +105,7 @@ compileJava {
 
 // WAR Configuration -----------------------------------------------------------
 
-// Don't add Java compiled client side classes to the WAR
+// Don't add GWT cross compiled client side classes to the WAR
 ext.excludedClasses = [
     '**/client/**',
     '**/*.gwt.xml'
@@ -126,7 +126,10 @@ repositories {
 
 // Create a GWT Compiler & Selenium compile configuration
 
-// configurations { bdd }
+configurations { 
+    bddCompile
+    bddRuntime 
+}
 
 dependencies {
 
@@ -144,7 +147,6 @@ dependencies {
     def selenium     = '2.48.2'
 
     // Last checked MVNRepository.com: 10-Aug-2017
-    def groovy       = '2.4.12'         // Jun 2017
     def cucumber     = '1.2.5'          // Sep 2016
     def selenide     = '4.6'            // Aug 2017
     def bdd          = '1.5.4'          // Jul 2017
@@ -166,7 +168,7 @@ dependencies {
 
         // Google Dependency Injection
         "com.google.gwt.inject:gin:$gin",
-        "com.google.inject:guice:$guice",
+        "com.google.inject:guice:$guice"
     ])
    
 
@@ -179,29 +181,31 @@ dependencies {
 
     runtime([
 
-        // Third Party (OSS) Support via Maven Central
+        // Third Party Support via Maven Central
         'joda-time:joda-time:2.9.9',
         'log4j:log4j:1.2.15',
         'org.slf4j:slf4j-api:1.7.7',
         'org.slf4j:slf4j-log4j12:1.7.7',
         'commons-jxpath:commons-jxpath:1.3',
         'commons-pool:commons-pool:1.4',
-        'org.apache.velocity:velocity:1.7',
+        'org.apache.velocity:velocity:1.7'
     ])
 
     testCompile([ 
         "junit:junit:$junit",
-        "org.codehaus.groovy:groovy-all:$groovy",
-        "org.mockito:mockito-core:$mockito",
+        "org.mockito:mockito-core:$mockito"
+    ])
+
+    testRuntime([ ])     // TBD
+
+    bddCompile([
         "info.cukes:cucumber-groovy:$cucumber",
         "net.serenity-bdd:serenity-cucumber:$bdd",
         "com.codeborne:selenide:$selenide",
-        "org.seleniumhq.selenium:selenium-java:$selenium",
-        'javax.validation:validation-api:1.1.0.Final:sources'
+        "org.seleniumhq.selenium:selenium-java:$selenium"       
     ])
 
-    testRuntime([ ])     // TDB
-
+    bddRuntime ([ ])     // TBD
 }
 
 
@@ -211,15 +215,21 @@ dependencies {
 
 sourceSets {
   
-
- test {
+    // Use libraries defined in 'bddCompile' and 'bddRuntime' configurations
+    bdd {
         groovy {
-            srcDirs = ['src/bdd/groovy','src/bdd/java','src/test/java']
+            srcDirs = ['src/bdd/groovy']
         }
 
         java {
-            srcDirs = []
+            srcDirs = ['src/bdd/java']
         }
+
+        // Libraries needed to compile
+        compileClasspath = configurations.bddCompile
+
+        // Compiled classes & libraries needed to run the tests
+        runtimeClasspath = output + compileClasspath + configurations.bddRuntime
     }  
  
 }
@@ -229,7 +239,7 @@ sourceSets {
 // G R A D L E   T A S K S  ==================================================================
 //============================================================================================
 
-// Also clean the GWT build directory
+// Also clean the GWT build directories
 
 clean { dependsOn 'cleanGWT' }
 
@@ -265,7 +275,7 @@ task compileGWT(dependsOn: ['compileJava', 'copyWebAppResources'], type:JavaExec
     jvmArgs = ['-Xmx1024M']                 // Memory, increase for larger Apps
 
     classpath = files ([
-        sourceSets.main.java.srcDirs,      // Contains Java sources to be compiled into JavaScript
+        sourceSets.main.java.srcDirs,     // Contains Java sources to be compiled into JavaScript
         sourceSets.main.runtimeClasspath  // Contains .gwt.xml file
     ])
 
@@ -357,54 +367,21 @@ gretty {
 
     loggingLevel = 'INFO' // options:   'ALL', 'DEBUG', 'ERROR', 'INFO', 'OFF', 'TRACE', 'WARN'
 
-
-    integrationTestTask = 'bddTests'
+    // Task to run after starting up the Servlet Container
+    integrationTestTask = 'bddTest'
 }
 
 
 //============================================================================================
-// T E S T   C O N F I G U R A T I O N  ====================================================== 
+// B D D   C O N F I G U R A T I O N  ====================================================== 
 //============================================================================================
 
-task bddTests(type: Test) {
-     include '/glue/**/*Test.class'
- }
+task bddTest(type: Test) {
 
-task unitTests(type: Test) {
-     include '/demo/**/*Test.class'
-}
+    include '/glue/**/*Test.class'
 
-
-//============================================================================================
-//  R E P O R T I N G  =======================================================================
-//============================================================================================
-
-
-task reports {
-    doLast {
-        displayReport 'test'
-        displayReport 'cucumber'
-        displayReport 'serenity'
-    }  
-}
-
-// BDD 'clearReports' also clears other test reports
-clearReports.doLast {
-    delete testReportDir
-}
-
-private def displayReport(def reportName) {
-    try {
-        desktop.browse(new File("$buildDir.name/$reportsDir.name/tests/${reportName}", 'index.html').toURI())
-    } catch (IOException exception) { /* Ignore missing report */ }
-}
-
-//============================================================================================
-//  T E S T I N G ============================================================================
-//============================================================================================
-
-// Define common behavior for all tests i.e. Unit, BDD, Cucumber
-tasks.withType(Test) {
+    testClassesDirs = files(sourceSets.bdd.groovy.outputDir)
+    classpath = sourceSets.bdd.runtimeClasspath
 
     reports.html.destination = new File(testReportDir, 'cucumber')
     reports.junitXml.destination = new File(testReportDir, 'cucumber-xml')
@@ -443,16 +420,48 @@ tasks.withType(Test) {
     }
 
 
+ }
 
+
+//============================================================================================
+//  R E P O R T I N G  =======================================================================
+//============================================================================================
+
+
+task reports {
+    doLast {
+        displayReport 'test'
+        displayReport 'cucumber'
+        displayReport 'serenity'
+    }  
+}
+
+// BDD 'clearReports' also clears other test reports
+clearReports.doLast {
+    delete testReportDir
+}
+
+private def displayReport(def reportName) {
+    try {
+        desktop.browse(new File("$buildDir.name/$reportsDir.name/tests/${reportName}", 'index.html').toURI())
+    } catch (IOException exception) { /* Ignore missing report */ }
+}
+
+//============================================================================================
+// T E S T   C O N F I G U R A T I O N  ====================================================== 
+//============================================================================================
+
+// Define common behavior for all tests i.e. Unit, BDD, Cucumber
+tasks.withType(Test) {
 
     // Set options for log level LIFECYCLE
     testLogging {
         events 'standardError'
-        showExceptions true
+        showExceptions showOutput
         exceptionFormat 'short'
-        showCauses false
-        showStackTraces false
-        showStandardStreams = false
+        showCauses showOutput
+        showStackTraces showOutput
+        showStandardStreams = showOutput
     }
 
     // Display a green/red bar after the tests finish
