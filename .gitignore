@@ -9,3 +9,7 @@
 
 # Library JARs
 lib/**
+
+# Selenium Webdriver
+
+chromedriver*
